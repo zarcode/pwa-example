@@ -1,7 +1,7 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
-var CACHE_STATIC_NAME = 'static-v52';
+var CACHE_STATIC_NAME = 'static-v53';
 var CACHE_DYNAMIC_NAME = 'dynamic-v2';
 var STATIC_FILES = [
   '/',
@@ -221,6 +221,58 @@ self.addEventListener('sync', function(event) {
   }
 });
 
-self.addEventListener('notificationclick', function (event) {
+self.addEventListener('notificationclick', function(event) {
+    var notification = event.notification;
+    var action = event.action;
 
-})
+    console.log(notification);
+
+    if (action === 'confirm') {
+        console.log('Confirm was chosen');
+        notification.close();
+    } else {
+        console.log(action);
+        event.waitUntil(
+            clients.matchAll()
+                .then(function(clis) {
+                    var client = clis.find(function (c) {
+                        return c.visibiltyState === 'visible';
+                    });
+
+                    if (client !== undefined) {
+                        client.navigate('http://localhost:8080');
+                        client.focus();
+                    } else {
+                        clients.openWindow('http://localhost:8080');
+                    }
+                })
+        );
+        notification.close();
+    }
+});
+
+self.addEventListener('notificationclose', function(event) {
+    console.log('Notification was closed', event);
+});
+
+self.addEventListener('push', function(event) {
+    console.log('Push received', event);
+
+    var data = { title: "New!", content: "Something new happened" }
+
+    if(event.data) {
+        data = JSON.parse(event.data.text())
+    }
+
+    var options = {
+        body: data.content,
+        icon: '/src/images/icons/app-icon-96x96.png',
+        image: '/src/images/sf-boat.jpg',
+        badge: '/src/images/icons/app-icon-96x96.png',
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    )
+
+});
