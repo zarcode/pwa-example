@@ -240,14 +240,14 @@ self.addEventListener('notificationclick', function(event) {
                     });
 
                     if (client !== undefined) {
-                        client.navigate('http://localhost:8080');
+                        client.navigate(notification.data.url);
                         client.focus();
                     } else {
-                        clients.openWindow('http://localhost:8080');
+                        clients.openWindow(notification.data.url);
                     }
+                    notification.close();
                 })
         );
-        notification.close();
     }
 });
 
@@ -258,7 +258,7 @@ self.addEventListener('notificationclose', function(event) {
 self.addEventListener('push', function(event) {
     console.log('Push received', event);
 
-    var data = { title: "New!", content: "Something new happened" }
+    var data = { title: "New!", content: "Something new happened", openUrl: "/" }
 
     if(event.data) {
         data = JSON.parse(event.data.text())
@@ -269,6 +269,9 @@ self.addEventListener('push', function(event) {
         icon: '/src/images/icons/app-icon-96x96.png',
         image: '/src/images/sf-boat.jpg',
         badge: '/src/images/icons/app-icon-96x96.png',
+        data: {
+            url: data.openUrl
+        }
     };
 
     event.waitUntil(
