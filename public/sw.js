@@ -1,13 +1,14 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
-var CACHE_STATIC_NAME = 'static-v53';
-var CACHE_DYNAMIC_NAME = 'dynamic-v2';
+var CACHE_STATIC_NAME = 'static-v56';
+var CACHE_DYNAMIC_NAME = 'dynamic-v3';
 var STATIC_FILES = [
   '/',
   '/index.html',
   '/offline.html',
   '/src/js/app.js',
+    '/src/js/utility.js',
   '/src/js/feed.js',
   '/src/js/idb.js',
   '/src/js/promise.js',
@@ -189,31 +190,30 @@ self.addEventListener('sync', function(event) {
       readAllData('sync-posts')
         .then(function(data) {
           for (var dt of data) {
+              var postData = new FormData();
+              postData.append('id', dt.id);
+              postData.append('title', dt.title);
+              postData.append('location', dt.location);
+              postData.append('rawLocationLat', dt.rawLocation.lat);
+              postData.append('rawLocationLng', dt.rawLocation.lng);
+              postData.append('file', dt.picture, dt.id + '.png');
+
             fetch('https://us-central1-pwagram-3ce94.cloudfunctions.net/storePostData', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({
-                id: dt.id,
-                title: dt.title,
-                location: dt.location,
-                image: "https://firebasestorage.googleapis.com/v0/b/pwagram-3ce94.appspot.com/o/sf-boat.jpg?alt=media&token=1e6e85f6-08f5-4756-bd4a-3d0ab4fe8c77"
-              })
+                method: 'POST',
+                body: postData
             })
-              .then(function(res) {
-                console.log('Sent data', res);
-                if (res.ok) {
-                    res.json()
-                        .then(function (resData) {
-                            deleteItemFromData('sync-posts', resData.id); // Isn't working correctly!
-                        })
-                }
-              })
-              .catch(function(err) {
-                console.log('Error while sending data', err);
-              });
+                .then(function(res) {
+                    console.log('Sent data', res);
+                    if (res.ok) {
+                        res.json()
+                            .then(function(resData) {
+                                deleteItemFromData('sync-posts', resData.id);
+                            });
+                    }
+                })
+                .catch(function(err) {
+                    console.log('Error while sending data', err);
+                });
           }
 
         })
