@@ -43,18 +43,40 @@ workboxSW.router.registerRoute("https://pwagram-3ce94.firebaseio.com/posts.json"
         })
 })
 
+workboxSW.router.registerRoute(function (routeData) {
+    return (routeData.event.request.headers.get('accept').includes('text/html'));
+}, function(args) {
+    return caches.match(args.event.request)
+        .then(function (response) {
+            if (response) {
+                return response;
+            } else {
+                return fetch(args.event.request)
+                    .then(function (res) {
+                        return caches.open('dynamic')
+                            .then(function (cache) {
+                                cache.put(args.event.request.url, res.clone());
+                                return res;
+                            })
+                    })
+                    .catch(function (err) {
+                        return caches.match('/offline.html')
+                            .then(function (res) {
+                                return res;
+                            });
+                    });
+            }
+        })
+});
+
 workboxSW.precache([
-  {
-    "url": "404.html",
-    "revision": "0a27a4163254fc8fce870c8cc3a3f94f"
-  },
   {
     "url": "favicon.ico",
     "revision": "2cab47d9e04d664d93c8d91aec59e812"
   },
   {
     "url": "index.html",
-    "revision": "33236229df7c621d12f704e9dbf08b78"
+    "revision": "215f6000c44f42d5b0931a88c6272d98"
   },
   {
     "url": "manifest.json",
@@ -63,10 +85,6 @@ workboxSW.precache([
   {
     "url": "offline.html",
     "revision": "45352e71a80a5c75d25e226e7330871b"
-  },
-  {
-    "url": "service-worker.js",
-    "revision": "9e150294cbdb3a5d25e44857bf2f5fca"
   },
   {
     "url": "src/css/app.css",
@@ -79,46 +97,6 @@ workboxSW.precache([
   {
     "url": "src/css/help.css",
     "revision": "1c6d81b27c9d423bece9869b07a7bd73"
-  },
-  {
-    "url": "src/js/app.js",
-    "revision": "5dd22b5d86f068bfe127eedfa25c3be4"
-  },
-  {
-    "url": "src/js/feed.js",
-    "revision": "7cc21173bcd260cac221003e965d703d"
-  },
-  {
-    "url": "src/js/fetch.js",
-    "revision": "6b82fbb55ae19be4935964ae8c338e92"
-  },
-  {
-    "url": "src/js/idb.js",
-    "revision": "017ced36d82bea1e08b08393361e354d"
-  },
-  {
-    "url": "src/js/material.min.js",
-    "revision": "713af0c6ce93dbbce2f00bf0a98d0541"
-  },
-  {
-    "url": "src/js/promise.js",
-    "revision": "10c2238dcd105eb23f703ee53067417f"
-  },
-  {
-    "url": "src/js/utility.js",
-    "revision": "e71f4998d23e48b260a4b92f50ee3e04"
-  },
-  {
-    "url": "sw-base.js",
-    "revision": "11fc03f0137599660ae826699f0c5a79"
-  },
-  {
-    "url": "sw.js",
-    "revision": "f8b538dbfa6ab4ec0a722c145cb5d087"
-  },
-  {
-    "url": "workbox-sw.prod.v2.1.2.js",
-    "revision": "685d1ceb6b9a9f94aacf71d6aeef8b51"
   },
   {
     "url": "src/images/main-image-lg.jpg",
@@ -135,5 +113,132 @@ workboxSW.precache([
   {
     "url": "src/images/sf-boat.jpg",
     "revision": "0f282d64b0fb306daf12050e812d6a19"
+  },
+  {
+    "url": "src/js/app.min.js",
+    "revision": "cfb8f8035dc565a54a46501b7463afc4"
+  },
+  {
+    "url": "src/js/feed.min.js",
+    "revision": "fae550e5b644472e5bb3e7c543b7057f"
+  },
+  {
+    "url": "src/js/fetch.min.js",
+    "revision": "32590119a06bf9ade8026dd12baa695e"
+  },
+  {
+    "url": "src/js/idb.min.js",
+    "revision": "ea82c8cec7e6574ed535bee7878216e0"
+  },
+  {
+    "url": "src/js/material.min.js",
+    "revision": "713af0c6ce93dbbce2f00bf0a98d0541"
+  },
+  {
+    "url": "src/js/promise.min.js",
+    "revision": "ed8fa9e786ad3f5c96b5d2b3d80ba0de"
+  },
+  {
+    "url": "src/js/utility.min.js",
+    "revision": "bc85dcca62fe3dc1afbf9e1a02eb79cc"
   }
 ]);
+
+
+self.addEventListener('sync', function(event) {
+    console.log('[Service Worker] Background syncing', event);
+    if (event.tag === 'sync-new-posts') {
+        console.log('[Service Worker] Syncing new Posts');
+        event.waitUntil(
+            readAllData('sync-posts')
+                .then(function(data) {
+                    for (var dt of data) {
+                        var postData = new FormData();
+                        postData.append('id', dt.id);
+                        postData.append('title', dt.title);
+                        postData.append('location', dt.location);
+                        postData.append('rawLocationLat', dt.rawLocation.lat);
+                        postData.append('rawLocationLng', dt.rawLocation.lng);
+                        postData.append('file', dt.picture, dt.id + '.png');
+
+                        fetch('https://us-central1-pwagram-3ce94.cloudfunctions.net/storePostData', {
+                            method: 'POST',
+                            body: postData
+                        })
+                            .then(function(res) {
+                                console.log('Sent data', res);
+                                if (res.ok) {
+                                    res.json()
+                                        .then(function(resData) {
+                                            deleteItemFromData('sync-posts', resData.id);
+                                        });
+                                }
+                            })
+                            .catch(function(err) {
+                                console.log('Error while sending data', err);
+                            });
+                    }
+
+                })
+        );
+    }
+});
+
+self.addEventListener('notificationclick', function(event) {
+    var notification = event.notification;
+    var action = event.action;
+
+    console.log(notification);
+
+    if (action === 'confirm') {
+        console.log('Confirm was chosen');
+        notification.close();
+    } else {
+        console.log(action);
+        event.waitUntil(
+            clients.matchAll()
+                .then(function(clis) {
+                    var client = clis.find(function (c) {
+                        return c.visibiltyState === 'visible';
+                    });
+
+                    if (client !== undefined) {
+                        client.navigate(notification.data.url);
+                        client.focus();
+                    } else {
+                        clients.openWindow(notification.data.url);
+                    }
+                    notification.close();
+                })
+        );
+    }
+});
+
+self.addEventListener('notificationclose', function(event) {
+    console.log('Notification was closed', event);
+});
+
+self.addEventListener('push', function(event) {
+    console.log('Push received', event);
+
+    var data = { title: "New!", content: "Something new happened", openUrl: "/" }
+
+    if(event.data) {
+        data = JSON.parse(event.data.text())
+    }
+
+    var options = {
+        body: data.content,
+        icon: '/src/images/icons/app-icon-96x96.png',
+        image: '/src/images/sf-boat.jpg',
+        badge: '/src/images/icons/app-icon-96x96.png',
+        data: {
+            url: data.openUrl
+        }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    )
+
+});
