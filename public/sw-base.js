@@ -1,3 +1,4 @@
+importScripts('/src/js/config.min.js');
 importScripts('workbox-sw.prod.v2.1.2.js');
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
@@ -26,7 +27,7 @@ workboxSW.router.registerRoute(/.*(?:firebasestorage\.googleapis)\.com.*$/,
     }) // cache than network
 )
 
-workboxSW.router.registerRoute("https://pwagram-3ce94.firebaseio.com/posts.json", function(args){
+workboxSW.router.registerRoute("https://" + firebaseProjectName + ".firebaseio.com/posts.json", function(args){
     return fetch(args.event.request)
         .then(function (res) {
             var clonedRes = res.clone();
@@ -88,7 +89,7 @@ self.addEventListener('sync', function(event) {
                         postData.append('rawLocationLng', dt.rawLocation.lng);
                         postData.append('file', dt.picture, dt.id + '.png');
 
-                        fetch('https://us-central1-pwagram-3ce94.cloudfunctions.net/storePostData', {
+                        fetch('https://us-central1-' + firebaseProjectName + '.cloudfunctions.net/storePostData', {
                             method: 'POST',
                             body: postData
                         })

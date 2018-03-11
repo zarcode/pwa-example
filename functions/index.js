@@ -16,9 +16,10 @@ var path = require('path');
 
 var serviceAccount = require("./pwagram-fb-key.json");
 var privateVapidKey = require("./pwagram-vapid-key.json");
+var config = require("./config.js");
 
 var gcconfig = {
-    projectId: "pwagram-3ce94",
+    projectId: config.firebaseProjectName,
     keyFilename: "pwagram-fb-key.json"
 };
 
@@ -26,7 +27,7 @@ var gcs = require("@google-cloud/storage")(gcconfig);
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://pwagram-3ce94.firebaseio.com/'
+    databaseURL: 'https://' + config.firebaseProjectName + '.firebaseio.com/'
 });
 
 exports.storePostData = functions.https.onRequest(function(request, response) {
@@ -55,7 +56,7 @@ exports.storePostData = functions.https.onRequest(function(request, response) {
 
         // This callback will be invoked after all uploaded files are saved.
         busboy.on("finish", () => {
-            var bucket = gcs.bucket("pwagram-3ce94.appspot.com");
+            var bucket = gcs.bucket(config.firebaseProjectName + ".appspot.com");
         bucket.upload(
             upload.file,
             {
@@ -140,7 +141,7 @@ exports.storePostData = functions.https.onRequest(function(request, response) {
         busboy.end(request.rawBody);
         // formData.parse(request, function(err, fields, files) {
         //   fs.rename(files.file.path, "/tmp/" + files.file.name);
-        //   var bucket = gcs.bucket("pwagram-3ce94.appspot.com");
+        //   var bucket = gcs.bucket(".appspot.com");
         // });
     });
 });

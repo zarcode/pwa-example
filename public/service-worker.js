@@ -1,3 +1,4 @@
+importScripts('/src/js/config.min.js');
 importScripts('workbox-sw.prod.v2.1.2.js');
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
@@ -26,7 +27,7 @@ workboxSW.router.registerRoute(/.*(?:firebasestorage\.googleapis)\.com.*$/,
     }) // cache than network
 )
 
-workboxSW.router.registerRoute("https://pwagram-3ce94.firebaseio.com/posts.json", function(args){
+workboxSW.router.registerRoute("https://" + firebaseProjectName + ".firebaseio.com/posts.json", function(args){
     return fetch(args.event.request)
         .then(function (res) {
             var clonedRes = res.clone();
@@ -76,7 +77,7 @@ workboxSW.precache([
   },
   {
     "url": "index.html",
-    "revision": "215f6000c44f42d5b0931a88c6272d98"
+    "revision": "a9cd7a17220e93bf4596fc8ef8ab9fd8"
   },
   {
     "url": "manifest.json",
@@ -84,7 +85,7 @@ workboxSW.precache([
   },
   {
     "url": "offline.html",
-    "revision": "45352e71a80a5c75d25e226e7330871b"
+    "revision": "76a021e5773ea5972a25d0ac53cc02de"
   },
   {
     "url": "src/css/app.css",
@@ -116,11 +117,15 @@ workboxSW.precache([
   },
   {
     "url": "src/js/app.min.js",
-    "revision": "cfb8f8035dc565a54a46501b7463afc4"
+    "revision": "5504a45641a181b0b0ef265a3a375689"
+  },
+  {
+    "url": "src/js/config.min.js",
+    "revision": "160274262a614f51af6a799d447ace48"
   },
   {
     "url": "src/js/feed.min.js",
-    "revision": "fae550e5b644472e5bb3e7c543b7057f"
+    "revision": "4c78a79978b2c6162bfb76ce348c970f"
   },
   {
     "url": "src/js/fetch.min.js",
@@ -161,7 +166,7 @@ self.addEventListener('sync', function(event) {
                         postData.append('rawLocationLng', dt.rawLocation.lng);
                         postData.append('file', dt.picture, dt.id + '.png');
 
-                        fetch('https://us-central1-pwagram-3ce94.cloudfunctions.net/storePostData', {
+                        fetch('https://us-central1-' + firebaseProjectName + '.cloudfunctions.net/storePostData', {
                             method: 'POST',
                             body: postData
                         })

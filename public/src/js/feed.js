@@ -201,7 +201,7 @@ function updateUI(data) {
   }
 }
 
-var url = 'https://pwagram-3ce94.firebaseio.com/posts.json';
+var url = 'https://' + firebaseProjectName + '.firebaseio.com/posts.json';
 var networkDataReceived = false;
 
 fetch(url)
@@ -238,7 +238,7 @@ function sendData() {
     postData.append('rawLocationLng', fetchedLocation.lng);
     postData.append('file', picture, id + '.png');
 
-    fetch('https://us-central1-pwagram-3ce94.cloudfunctions.net/storePostData', {
+    fetch('https://us-central1-' + firebaseProjectName + '.cloudfunctions.net/storePostData', {
         method: 'POST',
         body: postData
     })

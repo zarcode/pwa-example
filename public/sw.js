@@ -1,5 +1,6 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
+importScripts('/src/js/config.min.js');
 
 var CACHE_STATIC_NAME = 'static-v56';
 var CACHE_DYNAMIC_NAME = 'dynamic-v3';
@@ -75,7 +76,7 @@ function isInArray(string, array) {
 
 self.addEventListener('fetch', function (event) {
 
-  var url = 'https://pwagram-3ce94.firebaseio.com/posts';
+  var url = 'https://' + firebaseProjectName + '.firebaseio.com/posts';
   if (event.request.url.indexOf(url) > -1) {
     event.respondWith(fetch(event.request)
       .then(function (res) {
@@ -198,7 +199,7 @@ self.addEventListener('sync', function(event) {
               postData.append('rawLocationLng', dt.rawLocation.lng);
               postData.append('file', dt.picture, dt.id + '.png');
 
-            fetch('https://us-central1-pwagram-3ce94.cloudfunctions.net/storePostData', {
+            fetch(firebaseCloudFunctionsURL, {
                 method: 'POST',
                 body: postData
             })
